@@ -1,0 +1,26 @@
+diff --git a/recompui/src/config/ui_config.cpp b/recompui/src/config/ui_config.cpp
+index 6c84c05..b60901e 100644
+--- a/recompui/src/config/ui_config.cpp
++++ b/recompui/src/config/ui_config.cpp
+@@ -116,7 +116,7 @@ namespace recompui {
+             config.load_config();
+         }
+ 
+-        recompinput::profiles::load_controls_config(recomp::get_config_path() / (config::controls::id + ".json"));
++        recompinput::profiles::load_controls_config(recomp::get_settings_path() / (config::controls::id + ".json"));
+ 
+         loaded_configs = true;
+     }
+diff --git a/recompui/src/config/ui_config_tab_controls.cpp b/recompui/src/config/ui_config_tab_controls.cpp
+index fa39c46..9be2146 100644
+--- a/recompui/src/config/ui_config_tab_controls.cpp
++++ b/recompui/src/config/ui_config_tab_controls.cpp
+@@ -17,7 +17,7 @@ void config::create_controls_tab(const std::string &name) {
+         nullptr,
+         [](TabCloseContext close_context) {
+             // Save the current control mappings when closing the controls tab.
+-            recompinput::profiles::save_controls_config(recomp::get_config_path() / (config::controls::id + ".json"));
++            recompinput::profiles::save_controls_config(recomp::get_settings_path() / (config::controls::id + ".json"));
+         }
+     );
+ }

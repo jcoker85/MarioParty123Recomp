@@ -1,0 +1,24 @@
+# N64Recomp config for Mario Party 3 (US).
+# Paths are relative to this file. decomp-build/ is produced by tools/build_decomp.sh mp3.
+
+[input]
+entrypoint = 0x80000400
+elf_path = "decomp-build/marioparty3.elf"
+output_func_path = "RecompiledFuncs"
+
+[patches]
+# HuPrc scheduler functions that switch stacks with setjmp/longjmp; reimplemented with host
+# fibers in games/mp3/src/process_scheduler.cpp.
+ignored = [
+    "HuPrcCall",
+    "HuPrcSleep",
+    "HuPrcChildWait",
+    "HuPrcTerminate",
+    # Overlay loaders (scene and mode overlays); reimplemented in games/mp3/src/overlay_loader.cpp to
+    # register loaded overlays.
+    "OvlLoad",
+    "func_8000B1A0_main",
+    # libultra __osExceptionPreamble (jumps to the exception handler through $k0), unnamed in the
+    # decomp; N64Recomp can't analyze it and N64ModernRuntime replaces the exception code.
+    "func_800818C8_main",
+]

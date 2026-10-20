@@ -1,0 +1,50 @@
+diff --git a/ultramodern/src/events.cpp b/ultramodern/src/events.cpp
+index 17d7a47..5dcbed1 100644
+--- a/ultramodern/src/events.cpp
++++ b/ultramodern/src/events.cpp
+@@ -227,12 +227,19 @@ void vi_thread_func() {
+             events_context.action_queue.enqueue(DummyWorkloadAction{events_context.vi.get_next_state()->framebuffer});
+         }
+ 
+-        // Queue a screen update for the graphics thread with the current VI register state.
+-        // Doing this before the VI update is equivalent to updating the screen after the previous frame's scanout finished.
+-        events_context.action_queue.enqueue(ScreenUpdateAction{ events_context.vi.regs });
++        // Update VI registers and swap VI modes. Hold the message mutex so a concurrent osViSwapBuffer
++        // can't land between reading the next state and copying it over the current one, which would
++        // report a framebuffer as current that isn't the one being displayed.
++        {
++            std::lock_guard lock{ events_context.message_mutex };
++            events_context.vi.update_vi();
++        }
+ 
+-        // Update VI registers and swap VI modes.
+-        events_context.vi.update_vi();
++        // Queue a screen update for the graphics thread with the VI state that was just latched, as
++        // hardware starts scanning out a swapped framebuffer at this vblank. Presenting the previous
++        // state instead keeps showing the old framebuffer for one more VI while the game, which now
++        // sees it as free, is already drawing the next frame into it (black or partial frames).
++        events_context.action_queue.enqueue(ScreenUpdateAction{ events_context.vi.regs });
+ 
+         // If the game has started, handle sending VI and AI events.
+         if (ultramodern::is_game_started()) {
+@@ -368,7 +375,10 @@ void gfx_thread_func(uint8_t* rdram, moodycamel::LightweightSemaphore* thread_re
+                 // start another graphics task until the RDP is also complete. Games usually preserve the RSP inputs until the RDP
+                 // is finished as well, so sending this early shouldn't be an issue in most cases.
+                 // If this causes issues then the logic can be replaced with responding to yield requests.
+-                sp_complete();
++                // Signalled only after the renderer has parsed the display list: some games (Mario Party's
++                // gfx loop) rewrite the task's data (here, the framebuffer segment at the head of the list)
++                // for the next task as soon as the RSP reports completion, which raced with the parse and
++                // drew passes into the wrong framebuffer.
+                 ultramodern::measure_input_latency();
+ 
+                 PTR(u64) displaylist = task_action->task.t.data_ptr;
+@@ -378,6 +388,8 @@ void gfx_thread_func(uint8_t* rdram, moodycamel::LightweightSemaphore* thread_re
+                 renderer_context->send_dl(&task_action->task);
+                 [[maybe_unused]] auto renderer_end = std::chrono::high_resolution_clock::now();
+ 
++                sp_complete();
++
+                 dp_complete();
+                 // TODO hook the parsed event up to the actual parsing point when a callback is added to RT64.
+                 ultramodern::extensions::on_displaylist_parsed(displaylist);
