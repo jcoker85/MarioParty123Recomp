@@ -1,0 +1,49 @@
+diff --git a/librecomp/include/librecomp/game.hpp b/librecomp/include/librecomp/game.hpp
+index a4cf7e8..f3e2d44 100644
+--- a/librecomp/include/librecomp/game.hpp
++++ b/librecomp/include/librecomp/game.hpp
+@@ -85,6 +85,10 @@ namespace recomp {
+     };
+     void register_config_path(std::filesystem::path path);
+     std::filesystem::path get_config_path();
++    // Folder for the base game configs (general.json, graphics.json, ...), so several programs
++    // can share them while keeping saves, ROMs and mods apart. Defaults to the config path.
++    void register_settings_path(std::filesystem::path path);
++    std::filesystem::path get_settings_path();
+     bool register_game(const recomp::GameEntry& entry);
+     void check_all_stored_roms();
+     bool load_stored_rom(const std::u8string& game_id);
+diff --git a/librecomp/src/config.cpp b/librecomp/src/config.cpp
+index 6bc03fd..97aac6d 100644
+--- a/librecomp/src/config.cpp
++++ b/librecomp/src/config.cpp
+@@ -49,7 +49,7 @@ static std::filesystem::path get_path_to_config(bool is_mod_config) {
+     if (is_mod_config) {
+         return recomp::get_config_path() / recomp::mods::mod_config_directory;
+     }
+-    return recomp::get_config_path();
++    return recomp::get_settings_path();
+ }
+ 
+ namespace recomp::config {
+diff --git a/librecomp/src/recomp.cpp b/librecomp/src/recomp.cpp
+index 850689d..3fd8b21 100644
+--- a/librecomp/src/recomp.cpp
++++ b/librecomp/src/recomp.cpp
+@@ -72,6 +72,16 @@ std::filesystem::path recomp::get_config_path() {
+     return config_path;
+ }
+ 
++static std::filesystem::path settings_path;
++
++void recomp::register_settings_path(std::filesystem::path path) {
++    settings_path = path;
++}
++
++std::filesystem::path recomp::get_settings_path() {
++    return settings_path.empty() ? config_path : settings_path;
++}
++
+ bool recomp::register_game(const recomp::GameEntry& entry) {
+     if (entry.display_name.empty()) {
+         ultramodern::error_handling::message_box("Game display name was not set.");

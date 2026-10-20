@@ -1,0 +1,14 @@
+# RSPRecomp config for Mario Party 2's audio microcode (libultra aspMain).
+# aspMainTextStart is at 0x800BE960 (ROM 0xBF560); the ucode is byte-identical to Mario Party 1's.
+text_offset = 0xBF560
+text_size = 0xE20
+text_address = 0x04001080
+rom_file_path = "mp2.us.z64"
+output_file_path = "rsp/aspMain.cpp"
+output_function_name = "aspMain"
+
+# Audio command dispatch table (DMEM 0x10..0x2F of the ucode data); same as Mario Party 1.
+extra_indirect_branch_targets = [
+    0x1118, 0x1470, 0x11DC, 0x1B38, 0x1214, 0x187C, 0x1254, 0x12D0,
+    0x12EC, 0x1328, 0x140C, 0x1294, 0x1E24, 0x138C, 0x170C, 0x144C
+]

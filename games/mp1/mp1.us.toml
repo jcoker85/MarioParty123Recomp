@@ -1,0 +1,46 @@
+# N64Recomp config for Mario Party (US).
+# Paths are relative to this file. decomp-build/ is produced by tools/build_decomp.sh mp1.
+
+[input]
+entrypoint = 0x80000400
+elf_path = "decomp-build/marioparty.elf"
+output_func_path = "RecompiledFuncs"
+
+[patches]
+# 64DD boot code; never reached on cartridge and N64Recomp can't analyze it.
+stubs = ["__LeoBootGame2"]
+# HuPrc scheduler functions that switch stacks with setjmp/longjmp; reimplemented with host
+# fibers in games/mp1/src/process_scheduler.cpp.
+ignored = [
+    "HuPrcCall",
+    "HuPrcSleep",
+    "HuPrcChildWatch",
+    "HuPrcTerminate",
+    # Overlay loader; reimplemented in games/mp1/src/overlay_loader.cpp to register loaded overlays.
+    "OvlLoad",
+    # 64DD presence checks that read the drive over the PI bus; stubbed in games/mp1/src/unknown_symbols.cpp.
+    "LeoDriveExist",
+    "func_800827C0",
+]
+
+
+# Widescreen fixes are disabled for now (games/mp1/src/widescreen.cpp is kept). Uncomment to re-enable.
+
+# # Widescreen: screen transitions (fades, wipes, irises; func_800721D8) are drawn as 2D rects in
+# # 4:3 screen space. Stretch them across the full width, then restore rt64's default.
+# [[patches.hook]]
+# func = "func_800247FC"
+# before_vram = 0x8002533C
+# text = "    { extern void mp1_set_2d_aspect(uint8_t*, uint32_t); mp1_set_2d_aspect(rdram, 1); }"
+
+# [[patches.hook]]
+# func = "func_800247FC"
+# before_vram = 0x80025344
+# text = "    { extern void mp1_set_2d_aspect(uint8_t*, uint32_t); mp1_set_2d_aspect(rdram, 0); }"
+
+# # Widescreen: render shifted/zoomed cameras (the board) as centered 4:3 (see mp1_camera_viewport_align).
+# # func_8001D658(s16 index, Gfx** gfx) sets up a camera's viewport and projection.
+# [[patches.hook]]
+# func = "func_8001D658"
+# before_vram = 0x8001D658
+# text = "    { extern void mp1_camera_viewport_align(uint8_t*, gpr, int32_t); mp1_camera_viewport_align(rdram, ctx->r5, (int16_t)ctx->r4); }"

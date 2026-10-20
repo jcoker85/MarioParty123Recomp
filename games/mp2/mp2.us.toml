@@ -1,0 +1,27 @@
+# N64Recomp config for Mario Party 2 (US).
+# Paths are relative to this file. decomp-build/ is produced by tools/build_decomp.sh mp2.
+
+[input]
+entrypoint = 0x80000400
+elf_path = "decomp-build/marioparty2.elf"
+output_func_path = "RecompiledFuncs"
+
+[patches]
+# 64DD boot code; never reached on cartridge and N64Recomp can't analyze it.
+stubs = ["__LeoBootGame2", "__LeoBootGame3"]
+# HuPrc scheduler functions that switch stacks with setjmp/longjmp; reimplemented with host
+# fibers in games/mp2/src/process_scheduler.cpp.
+ignored = [
+    "HuPrcCall",
+    "HuPrcSleep",
+    "HuPrcChildWatch",
+    "HuPrcTerminate",
+    # Overlay loader; reimplemented in games/mp2/src/overlay_loader.cpp to register loaded overlays.
+    "OvlLoad",
+    # libultra exception-handler internals (__osEnqueueAndYield and neighbours), unnamed in the
+    # decomp; N64ModernRuntime replaces the OS thread code that calls them.
+    "func_8009D24C_9DE4C",
+    # libultra osViGetNextFramebuffer, unnamed in the decomp. The original reads __osViNext, which
+    # the runtime never updates; forwarded to the runtime's version in games/mp2/src/unknown_symbols.cpp.
+    "func_800A6A70_A7670",
+]

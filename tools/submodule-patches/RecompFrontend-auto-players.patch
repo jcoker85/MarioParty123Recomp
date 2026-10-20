@@ -1,0 +1,150 @@
+diff --git a/recompinput/include/recompinput/players.h b/recompinput/include/recompinput/players.h
+index 6c59b61..f522ed5 100644
+--- a/recompinput/include/recompinput/players.h
++++ b/recompinput/include/recompinput/players.h
+@@ -22,6 +22,11 @@ namespace recompinput {
+         void set_min_number_of_players(size_t min_players);
+         void set_max_number_of_players(size_t max_players);
+         void set_player_count_range(size_t min_players, size_t max_players);
++        // Automatic assignment: the keyboard and the first controller are player 1, and each further
++        // controller becomes the next player as it connects. An unplugged controller frees its port.
++        void enable_auto_assignment();
++        void auto_assign_controller(SDL_GameController* controller);
++        void auto_unassign_controller(SDL_GameController* controller);
+         const Player& get_player(int player_index, bool temp_player = false);
+         bool get_player_is_assigned(int player_index, bool temp_player = false);
+         bool has_enough_players_assigned();
+diff --git a/recompinput/src/input_events.cpp b/recompinput/src/input_events.cpp
+index c76a1dc..38f47a5 100644
+--- a/recompinput/src/input_events.cpp
++++ b/recompinput/src/input_events.cpp
+@@ -1,6 +1,7 @@
+ #include "recompinput/recompinput.h"
+ #include "recompinput/input_binding.h"
+ #include "recompinput/input_events.h"
++#include "recompinput/players.h"
+ #include "recompinput/profiles.h"
+ #include "recompui/config.h"
+ #include "ultramodern/ultramodern.hpp"
+@@ -95,12 +96,14 @@ bool sdl_event_filter(void* userdata, SDL_Event* event) {
+                 profiles::add_controller(guid, profile_index);
+             }
+         }
++        players::auto_assign_controller(controller);
+     }
+     break;
+     case SDL_EventType::SDL_CONTROLLERDEVICEREMOVED:
+     {
+         SDL_ControllerDeviceEvent* controller_event = &event->cdevice;
+         printf("Controller removed: %d\n", controller_event->which);
++        players::auto_unassign_controller(SDL_GameControllerFromInstanceID(controller_event->which));
+         recompinput::remove_controller_state(controller_event->which);
+     }
+     break;
+diff --git a/recompinput/src/players.cpp b/recompinput/src/players.cpp
+index 08cb3f3..636377a 100644
+--- a/recompinput/src/players.cpp
++++ b/recompinput/src/players.cpp
+@@ -45,10 +45,18 @@ public:
+     bool player_is_assigned(int player_index) const {
+         return player_index >= 0 && player_index < max_num_players_supported && player_index < count;
+     }
++
++    // Drops trailing players with no input device.
++    void trim_unused() {
++        while (count > 1 && (*this)[count - 1].controller == nullptr && !(*this)[count - 1].keyboard_enabled) {
++            count--;
++        }
++    }
+ };
+ 
+ static struct {
+     bool single_player_mode = false;
++    bool auto_assignment = false;
+     bool is_assigning = false;
+     size_t min_players = 1;
+     size_t max_players = 4;
+@@ -109,6 +117,70 @@ bool players::get_player_is_assigned(int player_index, bool temp_player) {
+     return PlayerState.get_player_array(temp_player).player_is_assigned(player_index);
+ }
+ 
++void players::enable_auto_assignment() {
++    PlayerState.auto_assignment = true;
++    PlayerState.players = PlayerArray{};
++    PlayerState.players.add_keyboard_player();
++
++    // Player 1 keeps the SP profiles. Unset profile indices default to 0, which is the SP keyboard
++    // profile, so every other player must be cleared or the keyboard would drive them too.
++    for (int i = 1; i < (int)max_num_players_supported; i++) {
++        profiles::set_input_profile_for_player(i, -1, InputDevice::Keyboard);
++        profiles::set_input_profile_for_player(i, -1, InputDevice::Controller);
++    }
++}
++
++void players::auto_assign_controller(SDL_GameController* controller) {
++    if (!PlayerState.auto_assignment || PlayerState.is_assigning || controller == nullptr) {
++        return;
++    }
++
++    PlayerArray& assigned = PlayerState.players;
++    int slot = -1;
++    for (int i = 0; i < (int)assigned.get_count(); i++) {
++        if (assigned[i].controller == controller) {
++            return;
++        }
++        if (slot < 0 && assigned[i].controller == nullptr) {
++            slot = i;
++        }
++    }
++
++    if (slot >= 0) {
++        assigned[slot].controller = controller;
++        assigned[slot].button_pressed();
++    } else if (assigned.get_count() < PlayerState.max_players) {
++        slot = (int)assigned.get_count();
++        assigned.add_controller_player(controller);
++    } else {
++        return;
++    }
++
++    if (slot > 0) {
++        profiles::set_input_profile_for_player(slot, profiles::get_controller_profile_index_from_sdl_controller(controller), InputDevice::Controller);
++    }
++    printf("Controller assigned to player %d\n", slot + 1);
++}
++
++void players::auto_unassign_controller(SDL_GameController* controller) {
++    if (!PlayerState.auto_assignment || controller == nullptr) {
++        return;
++    }
++
++    PlayerArray& assigned = PlayerState.players;
++    for (int i = 0; i < (int)assigned.get_count(); i++) {
++        if (assigned[i].controller == controller) {
++            assigned[i].controller = nullptr;
++            if (i > 0) {
++                profiles::set_input_profile_for_player(i, -1, InputDevice::Controller);
++            }
++            assigned.trim_unused();
++            printf("Controller removed from player %d\n", i + 1);
++            return;
++        }
++    }
++}
++
+ bool players::has_enough_players_assigned() {
+     return PlayerState.players.get_count() >= PlayerState.min_players;
+ }
+@@ -160,6 +232,12 @@ void playerassignment::commit_player_assignment() {
+             if (cont_profile_index >= 0) {
+                 profiles::set_input_profile_for_player(i, cont_profile_index, InputDevice::Controller);
+             }
++            // With auto assignment the keyboard stays with player 1 and drives no one else.
++            if (PlayerState.auto_assignment) {
++                profiles::set_input_profile_for_player(i, i == 0 ? profiles::get_sp_keyboard_profile_index() : -1, InputDevice::Keyboard);
++            }
++        } else if (PlayerState.auto_assignment && i == 0) {
++            profiles::set_input_profile_for_player(i, profiles::get_sp_keyboard_profile_index(), InputDevice::Keyboard);
+         } else {
+             profiles::set_input_profile_for_player(i, profiles::get_or_create_mp_keyboard_profile_index(i), InputDevice::Keyboard);
+         }
