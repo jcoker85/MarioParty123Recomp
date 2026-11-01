@@ -22,3 +22,27 @@ ignored = [
     # decomp; N64Recomp can't analyze it and N64ModernRuntime replaces the exception code.
     "func_800818C8_main",
 ]
+
+# The font printer leaves the RDP scissor at (0,0)-(319,339), and the next frame's colour and depth
+# clears run before anything resets it. Column 319 then keeps stale depth and 3D fails there, leaving a
+# glitchy right-most column that TV overscan hid. Make the word 320x240 (lui 0x50 / ori 0x03C0).
+[[patches.instruction]]
+func = "pfDrawFonts"
+vram = 0x8004E074
+value = 0x3C020050
+
+[[patches.instruction]]
+func = "pfDrawFonts"
+vram = 0x8004E078
+value = 0x344203C0
+
+[[patches.instruction]]
+func = "pfDrawFonts"
+vram = 0x8004E63C
+value = 0x3C020050
+
+[[patches.instruction]]
+func = "pfDrawFonts"
+vram = 0x8004E640
+value = 0x344203C0
+

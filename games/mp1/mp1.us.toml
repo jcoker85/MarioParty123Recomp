@@ -44,3 +44,27 @@ ignored = [
 # func = "func_8001D658"
 # before_vram = 0x8001D658
 # text = "    { extern void mp1_camera_viewport_align(uint8_t*, gpr, int32_t); mp1_camera_viewport_align(rdram, ctx->r5, (int16_t)ctx->r4); }"
+
+# The font printer leaves the RDP scissor at (0,0)-(319,339), and the next frame's colour and depth
+# clears run before anything resets it. Column 319 then keeps stale depth and 3D fails there, leaving a
+# glitchy right-most column that TV overscan hid. Make the word 320x240 (lui 0x50 / ori 0x03C0).
+[[patches.instruction]]
+func = "pfDrawFonts"
+vram = 0x800625B4
+value = 0x3C020050
+
+[[patches.instruction]]
+func = "pfDrawFonts"
+vram = 0x800625B8
+value = 0x344203C0
+
+[[patches.instruction]]
+func = "pfDrawFonts"
+vram = 0x80062B7C
+value = 0x3C020050
+
+[[patches.instruction]]
+func = "pfDrawFonts"
+vram = 0x80062B80
+value = 0x344203C0
+
