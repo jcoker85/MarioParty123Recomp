@@ -164,7 +164,9 @@ public:
         if (frame_stats) {
             uint32_t origin = ultramodern::renderer::get_vi_regs()->VI_ORIGIN_REG;
             if (origin != last_origin) {
-                fprintf(stderr, "%s frame origin=%06X vis=%u tasks=%u fbs:%s\n", mp::game.log_tag, origin, vis_since_change, tasks_since_change, task_fbs.c_str());
+                const ultramodern::renderer::ViRegs* vi = ultramodern::renderer::get_vi_regs();
+                fprintf(stderr, "%s frame origin=%06X vis=%u tasks=%u status=%X width=%u hstart=%X vstart=%X xscale=%X yscale=%X fbs:%s\n", mp::game.log_tag, origin, vis_since_change, tasks_since_change,
+                    vi->VI_STATUS_REG, vi->VI_WIDTH_REG, vi->VI_H_START_REG, vi->VI_V_START_REG, vi->VI_X_SCALE_REG, vi->VI_Y_SCALE_REG, task_fbs.c_str());
                 last_origin = origin;
                 vis_since_change = 0;
                 tasks_since_change = 0;

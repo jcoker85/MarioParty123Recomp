@@ -27,6 +27,14 @@ extern "C" void osPfsIsPlug_recomp(uint8_t* rdram, recomp_context* ctx) {
     ctx->r2 = 0;
 }
 
+// libultra osViSetSpecialFeatures (unnamed in the decomp, listed in mp3.us.toml's ignored list).
+// The recompiled original only edits guest VI state the runtime never reads, which left gamma on
+// and the picture washed out.
+extern "C" void osViSetSpecialFeatures_recomp(uint8_t* rdram, recomp_context* ctx);
+extern "C" void func_8007D740_main(uint8_t* rdram, recomp_context* ctx) {
+    osViSetSpecialFeatures_recomp(rdram, ctx);
+}
+
 // 64DD (libleo) entry points. Mario Party may probe for the disk drive; report it absent.
 extern "C" void osLeoDiskInit_recomp(uint8_t* rdram, recomp_context* ctx) {
     ctx->r2 = 0;

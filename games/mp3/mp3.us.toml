@@ -21,6 +21,9 @@ ignored = [
     # libultra __osExceptionPreamble (jumps to the exception handler through $k0), unnamed in the
     # decomp; N64Recomp can't analyze it and N64ModernRuntime replaces the exception code.
     "func_800818C8_main",
+    # libultra osViSetSpecialFeatures, unnamed in the decomp. The game calls it to turn VI gamma off,
+    # which only reaches the runtime through the forward in games/mp3/src/unknown_symbols.cpp.
+    "func_8007D740_main",
 ]
 
 # The font printer leaves the RDP scissor at (0,0)-(319,339), and the next frame's colour and depth
