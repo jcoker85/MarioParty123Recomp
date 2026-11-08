@@ -25,8 +25,8 @@ You need your own ROM of each game you want to play; no game data is included.
 The menu works with the keyboard (arrows, Enter, Esc), the mouse, or a controller (D-pad, A, B). It
 hides while a game runs and comes back when the game closes.
 
-Default settings: fullscreen and 4:3 picture. The games don't have widescreen fixes
-yet, so the launcher's "Expand" aspect ratio can show glitches at the screen edges.
+Default settings: fullscreen and 4:3 picture. The launcher's "Expand" aspect ratio does not work
+correctly yet; see [Known issues](#known-issues).
 
 ### Controllers
 
@@ -35,7 +35,10 @@ Up to four players are supported, with no setup. The keyboard and the first cont
 frees its port, and the next controller plugged in takes it. To choose a different order, use
 **Assign players** on the launcher's Controls page.
 
-## Status: early prototype
+## Status: 1.0
+
+All three games boot and run from the menu, with shared settings and up to four players. What
+has been checked so far:
 
 - **Mario Party:** boot, intro, title and the Mushroom Village menu, with keyboard/mouse input and
   sound checked by hand. Boards, minigames and saves are not yet checked.
@@ -43,6 +46,15 @@ frees its port, and the next controller plugged in takes it. To choose a differe
   Boards, minigames and saves are not yet checked systematically.
 - **Mario Party 3:** boot through a Party Mode board turn and a minigame (scripted input, muted).
   Audio, manual input, Story and Duel modes and long sessions are not yet checked.
+
+Please report problems on the
+[issue tracker](https://github.com/jcoker85/MarioParty123Recomp/issues).
+
+## Known issues
+
+- **The Expand aspect ratio does not work correctly.** The games have no widescreen fixes yet, so
+  stretching the picture past 4:3 shows glitches at the screen edges, and Mario Party 1 also gets a
+  one-pixel black line along the bottom of the window. Use the default 4:3 aspect ratio.
 
 ## Settings and save data
 
