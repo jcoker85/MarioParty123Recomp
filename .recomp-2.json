@@ -1,0 +1,28 @@
+{
+  "$schema": "https://recomp.fyi/schema/v1.json",
+  "game": "Mario Party 2",
+  "system": "N64",
+  "type": "recomp",
+  "original": {
+    "region": "USA",
+    "serial": "NUS-NMWE-USA",
+    "sha1": "166eda1c05670d337e2c3f15a5db528ae1e5d6e3"
+  },
+  "project": "MarioParty123Recomp",
+  "status": "in-progress",
+  "targets": ["Windows"],
+  "toolchain": ["N64Recomp", "RT64"],
+  "approach": "Static recompilation with a shared menu and shared display, audio and control settings",
+  "maintainers": [
+    {
+      "name": "jcoker85",
+      "link": "https://github.com/jcoker85"
+    }
+  ],
+  "links": [
+    {
+      "label": "Source code",
+      "url": "https://github.com/jcoker85/MarioParty123Recomp"
+    }
+  ]
+}
