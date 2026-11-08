@@ -9,7 +9,7 @@
     "sha1": "6beb80ff822b96bcf85dcdb512e8b2b7969d8259"
   },
   "project": "MarioParty123Recomp",
-  "status": "in-progress",
+  "status": "released",
   "targets": ["Windows"],
   "toolchain": ["N64Recomp", "RT64"],
   "approach": "Static recompilation with a shared menu and shared display, audio and control settings",

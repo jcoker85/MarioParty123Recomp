@@ -54,7 +54,7 @@
 #include <timeapi.h>
 #endif
 
-const std::string version_string = "0.1.3";
+const std::string version_string = "1.0.0";
 
 template<typename... Ts>
 void exit_error(const char* str, Ts ...args) {
